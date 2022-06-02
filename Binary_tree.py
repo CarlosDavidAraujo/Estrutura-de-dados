@@ -1,98 +1,174 @@
+from abc import ABC, abstractmethod
+
+
+class TreeADT(ABC):
+
+    @abstractmethod
+    def insert(self, value):
+        """Método de inserção de informação na árvore"""
+        pass
+
+    @abstractmethod
+    def empty(self):
+        """Método que retorna True, caso a árvore esteja vazia, False caso contrário"""
+        pass
+
+    @abstractmethod
+    def root(self):
+        """Método que retorna o nó raiz da árvore. Se a árvore estiver vazia, None deve ser retornado"""
+        pass
+
+
 class Node:
-  def __init__(self, data, parent=None, left=None, right=None):
-    self._data = data
-    self._parent = parent
-    self._left = left
-    self._right = right
 
-  def __str__(self):
-    return self._data.__str__()
+    def __init__(self, data=None, parent=None, left=None, right=None):
+        self._data = data
+        self._parent = parent
+        self._left = left
+        self._right = right
+
+    def empty(self):
+        return not self._data
+
+    def __str__(self):
+        return self._data.__str__()
 
 
-class Tree:
-  def __init__(self, root = None):
-    self._root = None 
-    if root:
-      self._root = Node(root, None, None, None)
+class BinaryTree(TreeADT):
 
-  def insert(self, element, tree = None):
-    if not tree: # se não informar a sub-arvore, parte da raiz
-      tree = self._root
-    leaf = Node(element, tree) # referencia para a folha
-    if not self._root: # se a arvore estiver vazia, insere na raiz
-      self._root = Node(element)  
-    elif element < tree._data: # se o valor for menor que o do nó atual, segue o caminho da esquerda
-      if tree._left: #se já existir um filho esquerdo, faz a chamada recursiva partindo desse filho
-        self.insert(element, tree._left)
-      else: # se não, insere a folha como filho esquerdo
-        tree._left = leaf
-    else: # se o valor for igual ou maior que o do nó atual, segue o caminho da direita, fazendo o mesmo processo
-      if tree._right:
-        self.insert(element, tree._right)       
+    def __init__(self, data=None):
+        self._root = Node(data)
+
+    def insert(self, data, parent = None):
+      if not parent: 
+        parent = self._root
+      leaf = Node(data, parent) 
+      if self.empty(): 
+        self._root = Node(data)  
+      elif data < parent._data: 
+        if parent._left: 
+          self.insert(data, parent._left)
+        else: 
+          parent._left = leaf
+      else: 
+        if parent._right:
+          self.insert(data, parent._right)       
+        else:
+          parent._right = leaf
+
+    def remove(self, data):
+      node = self.search(data) #busca se o elemento esta na arvore e retorna o nó correspodente
+      if node: # se o nó existir, apaga o ponteiro que aponta para ele
+        if node == self._root: # caso do nó ser a raiz
+          self._root = None
+        elif node._parent._left == node: # caso de ser filho esq
+          node._parent._left = None
+        else: # caso de ser filho dir
+          node._parent._right = None 
+        
+    def recursive_search(self, data, node):
+      if not node or node._data == data:
+        return node
+      elif node._data > data:
+        return self.recursive_search(data, node._left)
       else:
-        tree._right = leaf
+        return self.recursive_search(data, node._right)
 
-  def remove(self, element):
-    node = self.search(element) #busca se o elemento esta na arvore e retorna o nó correspodente
-    if node: # se o nó existir, apaga o ponteiro que aponta para ele
-      if node == self._root: # caso do nó ser a raiz
-        self._root = None
-      elif node._parent._left == node: # caso de ser filho esq
-        node._parent._left = None
-      else: # caso de ser filho dir
-        node._parent._right = None 
-      
-  def in_order(self, tree):
-    if tree._left:
-      self.in_order(tree._left)
-    print(tree)
-    if tree._right:
-      self.in_order(tree._right)
-
-  def print_tree(self, tree, space = ""):
-    space += "        "
-    if tree._left:
-      self.print_tree(tree._left, space)
-    print(space + str(tree))
-    if tree._right:
-      self.print_tree(tree._right, space)
-  
-  def recursive_search(self, element, node):
-    if not node or node._data == element:
+    def search(self, data):
+      node = self._root
+      while node and node._data != data:
+        if data > node._data:
+          node = node._right
+        else:
+          node = node._left
       return node
-    elif node._data > element:
-      return self.recursive_search(element, node._left)
-    else:
-      return self.recursive_search(element, node._right)
+        
+    def traversal(self, in_order=True, pre_order=False, post_order=False):
+        list = [[],[],[]]
+        if in_order: 
+          list[0] = self.__in_order(self._root, [])
+        if pre_order:
+          list[1] = self.__pre_order(self._root, [])
+        if post_order:
+          list[2] = self.__post_order(self._root, [])
+        return list
+                     
+    def __in_order(self, node, list):
+      if node._left:
+        self.__in_order(node._left, list)
+      list.append(node._data)
+      if node._right:
+        self.__in_order(node._right, list)
+      return list
 
-  def search(self, element):
-    tree = self._root
-    while tree and tree._data != element:
-      if element > tree._data:
-        tree = tree._right
-      else:
-        tree = tree._left
-    return tree
-  
-if __name__ == "__main__":
-  T = Tree(21)
-  T.insert(14)
-  T.insert(28)
-  T.insert(11)
-  T.insert(18)
-  T.insert(25)
-  T.insert(32)
-  T.insert(5)
-  T.insert(12)
-  T.insert(15)
-  T.insert(19)
-  T.insert(23)
-  T.insert(27)
-  T.insert(30)
-  T.insert(37)
-  T.print_tree(T._root)
-  print(T.recursive_search(5, T._root))
-  print(T.search(32))
-  T.remove(37)
-  T.remove(5)
-  T.print_tree(T._root)
+    def __pre_order(self, node, list):
+      list.append(node._data)
+      if node._left:
+        self.__pre_order(node._left, list)
+      if node._right:
+        self.__pre_order(node._right, list)
+      return list
+
+    def __post_order(self, node, list):
+      if node._left:
+        self.__post_order(node._left, list)
+      if node._right:
+        self.__post_order(node._right, list)
+      list.append(node._data)
+      return list
+
+    def empty(self):
+        return not self._root._data
+    
+    def root(self):
+        return self._root._data
+
+    def print_2d_tree(self, node, space=""):
+      space += "        "
+      if node._left:
+        self.print_2d_tree(node._left, space)
+      print(space + str(node._data))
+      if node._right:
+        self.print_2d_tree(node._right, space)
+      
+
+
+def menu():
+    print('1 - adicionar folha')
+    print('2 - imprimir arvore em ordem')
+    print('3 - imprimir arvore em pré-ordem')
+    print('4 - imprimir arvore em pós-ordem')
+    print('5 - remover nó')
+    print('6 - imprimir arvore em 2d')
+    opcao = int(input())
+    return opcao
+    
+if __name__ == '__main__':
+    bt = BinaryTree()
+    bt.insert(21)
+    bt.insert(14)
+    bt.insert(28)
+    bt.insert(11)
+    bt.insert(18)
+    bt.insert(25)
+    bt.insert(32)
+    print(bt.empty())
+    print(bt.root())
+    opt = menu()
+    while opt < 7:
+      if opt == 1:
+        leaf = int(input("Digite o valor da folha: "))
+        bt.insert(leaf)
+      elif opt == 2:    
+        print(bt.traversal()) 
+      elif opt == 3:     
+        print(bt.traversal(False, True)) 
+      elif opt == 4:      
+        print(bt.traversal(False, False, True))
+      elif opt == 5:
+        data = int(input("Digite o valor do nó que deseja remover: "))
+        bt.remove(data)
+        print(bt.traversal())
+      elif opt == 6:
+        bt.print_2d_tree(bt._root)
+      opt = menu()
